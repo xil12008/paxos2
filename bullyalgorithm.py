@@ -26,11 +26,15 @@ def TCPSend(dest, content):
     #print threading.currentThread().getName(), 'TCP Client Starting. I am Node#', ID
     BUFFER_SIZE = 1024
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((TCP_IP, TCP_PORT))
-    s.send(content)
-    printdata("TCP Send", ID, ID, Configuration.getID(TCP_IP), content)
-    s.close()
-    return 0 #exit successfully 
+    try:
+        s.connect((TCP_IP, TCP_PORT))
+        s.send(content)
+        printdata("TCP Send", ID, ID, Configuration.getID(TCP_IP), content)
+        s.close()
+        return 0 #exit successfully 
+    except:
+        print "TCP Connection rejected"
+        return 1
     
 def bcastCoordinator():
     for i in range(1, Configuration.getN() + 1):
