@@ -97,20 +97,27 @@ def TCPServer_wait_OK():
     TCP_PORT = Configuration.TCPPORT_OK 
     BUFFER_SIZE = 1024
     print threading.currentThread().getName(), 'TCP OK OK OK Server Starting. I am Node#', ID, "ip=", MYIP
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(( socket.gethostname(), TCP_PORT))
-    print "TCP OK OK OK Server at", socket.gethostname(), ":", TCP_PORT
-    server.listen(5) #At most 5 concurrent connection
-    timeout_in_seconds = 10
-    ready = select.select([server], [], [], timeout_in_seconds)
-    if ready[0]:
-        data = server.recv(4096)
-        return True
-    return False
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(( socket.gethostname(), TCP_PORT))
+        print "TCP OK OK OK Server at", socket.gethostname(), ":", TCP_PORT
+        server.listen(5) #At most 5 concurrent connection
+        timeout_in_seconds = 10
+        ready = select.select([server], [], [], timeout_in_seconds)
+        if ready[0]:
+            data = server.recv(4096)
+            print "RECEIVE OK"
+            return True
+        print "DID NOT RECEIVE OK"
+        return False
+     except:
+        print "OK Server Conflict"
+        return False
 
 #============================ main =========================#
 
 leader = -1 # unknown leader 
+
 
 tTCPServer = threading.Thread(target=TCPServer)
 tTCPServer.daemon = True
@@ -128,6 +135,7 @@ while True:
        if leader != -1:
            if TCPSend(leader, "hi") == "1" : #leader dead
                bcastElection(ID)
+               TCPServer_wait_OK()
     finally:
         time.sleep(5)
 
