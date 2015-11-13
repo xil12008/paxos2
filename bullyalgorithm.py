@@ -110,7 +110,7 @@ def TCPServer_wait_OK():
             return True
         print "DID NOT RECEIVE OK"
         return False
-     except:
+    except:
         print "OK Server Conflict"
         return False
 
