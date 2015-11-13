@@ -123,7 +123,7 @@ tTCPServer = threading.Thread(target=TCPServer)
 tTCPServer.daemon = True
 tTCPServer.start()
 
-time.sleep(1)
+time.sleep(5)
 
 ID = Configuration.getMyID()
 bcastElection(ID)
