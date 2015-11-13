@@ -20,6 +20,8 @@ def TCPSend(dest, content):
        print "TCPSend() cancelled. (WARNING: sending to itself)" #Ignore itself
        return 1 #sending msg failed
     TCP_PORT = Configuration.TCPPORT 
+    if content == "OK":
+        TCP_PORT = Configuration.TCPPORT_OK
     ID = Configuration.getMyID()
     #print threading.currentThread().getName(), 'TCP Client Starting. I am Node#', ID
     BUFFER_SIZE = 1024
@@ -74,6 +76,7 @@ def TCPServer():
                         if peerID < ID:
                             TCPSend( peerID, "OK")
                             bcastElection( ID)
+                            TCPServer_wait_OK()
                     elif data[0] == 'O': #OK
                         print "NODE #", ID, "Gave up. (Receive OK from", peerID, ")"
                 else: 
@@ -84,8 +87,24 @@ def TCPServer():
     print threading.currentThread().getName(), 'TCP Server Exiting. I am NODE#', ID
     return
 
-#============================ main =========================#
+def TCPServer_wait_OK():
+    ID = Configuration.getMyID()
+    MYIP = Configuration.getPublicIP()
+    TCP_PORT = Configuration.TCPPORT_OK 
+    BUFFER_SIZE = 1024
+    print threading.currentThread().getName(), 'TCP OK OK OK Server Starting. I am Node#', ID, "ip=", MYIP
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(( socket.gethostname(), TCP_PORT))
+    print "TCP OK OK OK Server at", socket.gethostname(), ":", TCP_PORT
+    server.listen(5) #At most 5 concurrent connection
+    timeout_in_seconds = 10
+    ready = select.select([server], [], [], timeout_in_seconds)
+    if ready[0]:
+        data = mysocket.recv(4096)
+        return True
+    return False
 
+#============================ main =========================#
 
 leader = -1 # unknown leader 
 
@@ -97,10 +116,11 @@ time.sleep(1)
 
 ID = Configuration.getMyID()
 bcastElection(ID)
+TCPServer_wait_OK()
 
 while True:
     try:
-       print "Check every one alive. My leader is", leader 
+       print "Check leader alive? My leader is", leader 
        if leader != -1:
            if TCPSend(leader, "hi") == "1" : #leader dead
                bcastElection(ID)
