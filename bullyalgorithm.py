@@ -100,7 +100,7 @@ def TCPServer_wait_OK():
     timeout_in_seconds = 10
     ready = select.select([server], [], [], timeout_in_seconds)
     if ready[0]:
-        data = mysocket.recv(4096)
+        data = server.recv(4096)
         return True
     return False
 
