@@ -9,7 +9,8 @@ class Configuration:
     IPTABLE = ['52.32.133.50', '52.24.77.146', '52.23.235.109'] 
 
     UDPPORT = 5005 #UDP PORT
-    TCPPORT = 12345 #TCP PORT
+    TCPPORT = 12366 #TCP PORT
+    TCPPORT_OK = 12377 #TCP PORT
     PORTS = {"prepare":12345, "promise":12346, "accept":12345, "ack":12348, "commit":12345, "request":12345, "update":12347}
     
     ACCEPTOR_PORT = 12346
