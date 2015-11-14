@@ -13,17 +13,12 @@ def printdata(head, node, source, end, data):
 
 def TCPSend(dest, content):
     print "TCPSend"
-    #pdb.set_trace()
     TCP_IP = Configuration.getIP(dest) 
     MYIP = Configuration.getPublicIP()
-    if TCP_IP == MYIP:
-       print "TCPSend() cancelled. (WARNING: sending to itself)" #Ignore itself
-       return 1 #sending msg failed
     TCP_PORT = Configuration.TCPPORT 
     if content == "OK":
         TCP_PORT = Configuration.TCPPORT_OK
     ID = Configuration.getMyID()
-    #print threading.currentThread().getName(), 'TCP Client Starting. I am Node#', ID
     BUFFER_SIZE = 1024
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -52,14 +47,15 @@ def TCPServer():
     MYIP = Configuration.getPublicIP()
     TCP_PORT = Configuration.TCPPORT 
     BUFFER_SIZE = 1024
+
     print threading.currentThread().getName(), 'TCP Server Starting. I am Node#', ID, "ip=", MYIP
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(( socket.gethostname(), TCP_PORT))
     print "TCP Server at", socket.gethostname(), ":", TCP_PORT
     server.listen(5) #At most 5 concurrent connection
     input = [server] 
-    running = 1 
-    while running: 
+
+    while 1: 
         inputready,outputready,exceptready = select.select(input,[],[]) 
     
         for s in inputready: 
@@ -73,13 +69,15 @@ def TCPServer():
                 if data: 
                     peerID =  Configuration.getID( s.getpeername()[0] )
                     printdata("TCP Recv", ID, peerID, ID, data)
-                    time.sleep(1)
                     if data[0] == 'C': #Coordinate
                         print "NODE #", ID, "Leader is", peerID
                     elif data[0] == 'E': #Election
                         if peerID < ID:
                             TCPSend( peerID, "OK")
-                            bcastElection( ID)
+                            bcastElection(ID)
+                            TCPServer_wait_OK()
+                        elif peerID == ID:
+                            bcastElection(ID)
                             TCPServer_wait_OK()
                     elif data[0] == 'O': #OK
                         print "NODE #", ID, "Gave up. (Receive OK from", peerID, ")"
@@ -96,11 +94,10 @@ def TCPServer_wait_OK():
     MYIP = Configuration.getPublicIP()
     TCP_PORT = Configuration.TCPPORT_OK 
     BUFFER_SIZE = 1024
-    print threading.currentThread().getName(), 'TCP OK OK OK Server Starting. I am Node#', ID, "ip=", MYIP
     #try:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(( socket.gethostname(), TCP_PORT))
-    print "TCP OK OK OK Server at", socket.gethostname(), ":", TCP_PORT
+    print "waiting for OK.... at", socket.gethostname(), ":", TCP_PORT
     server.listen(5) #At most 5 concurrent connection
     timeout_in_seconds = 10
     ready = select.select([server], [], [], timeout_in_seconds)
@@ -114,29 +111,32 @@ def TCPServer_wait_OK():
     #print "OK Server Conflict"
     #return False
 
+def checkalive():
+    time.sleep(10)
+    ID = Configuration.getMyID()
+    #hold election by itself
+    TCPSend(ID, "ELECTION")
+    while True:
+       try:
+          print "Check leader alive? My leader is", leader 
+          if leader != -1:
+              if TCPSend(leader, "hi") == "1" : #leader dead
+                  bcastElection(ID)
+                  TCPServer_wait_OK()
+       finally:
+           time.sleep(5)
+
 #============================ main =========================#
 
 leader = -1 # unknown leader 
 
-tTCPServer = threading.Thread(target=TCPServer)
-tTCPServer.daemon = True
-tTCPServer.start()
+t= threading.Thread(target=checkalive)
+t.daemon = True
+t.start()
+
+TCPServer()
 
 time.sleep(5)
-
-ID = Configuration.getMyID()
-bcastElection(ID)
-TCPServer_wait_OK()
-
-while True:
-    try:
-       print "Check leader alive? My leader is", leader 
-       if leader != -1:
-           if TCPSend(leader, "hi") == "1" : #leader dead
-               bcastElection(ID)
-               TCPServer_wait_OK()
-    finally:
-        time.sleep(5)
 
 while threading.active_count() > 0:
     time.sleep(0.1)
