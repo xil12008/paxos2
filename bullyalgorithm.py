@@ -118,7 +118,7 @@ def checkalive():
               if TCPSend(leader, "hi") == 1 : #leader dead
                   TCPSend(ID, "ELECTION")
        finally:
-           time.sleep(5)
+           time.sleep(15)
 
 #============================ main =========================#
 
