@@ -100,8 +100,8 @@ def accumulate():
         time.sleep(1) 
         if timervar >= 0:
             timervar += 1 
-            print "wait OK for " , timervar, "/10 seconds..." 
-        if timervar == 10:
+            print "wait OK for " , timervar, "/7 seconds..." 
+        if timervar == 7:
             timervar = -9999999
             bcastCoordinator()
 
@@ -118,7 +118,7 @@ def checkalive():
               if TCPSend(leader, "hi") == 1 : #leader dead
                   TCPSend(ID, "ELECTION")
        finally:
-           time.sleep(15)
+           time.sleep(20)
 
 #============================ main =========================#
 
