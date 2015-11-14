@@ -7,6 +7,8 @@ import socket
 import time
 from configuration import Configuration
 
+timervar = -99999999
+
 #tag:print
 def printdata(head, node, source, end, data):
     print "NODE#%d: %s %d=====>%d data=[%s]" %( node, head, source, end, data)
@@ -16,8 +18,6 @@ def TCPSend(dest, content):
     TCP_IP = Configuration.getIP(dest) 
     MYIP = Configuration.getPublicIP()
     TCP_PORT = Configuration.TCPPORT 
-    if content == "OK":
-        TCP_PORT = Configuration.TCPPORT_OK
     ID = Configuration.getMyID()
     BUFFER_SIZE = 1024
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -75,9 +75,9 @@ def TCPServer():
                     elif data[0] == 'E': #Election
                         if peerID < ID:
                             TCPSend( peerID, "OK")
-                            threading.Thread(target=TCPServer_wait_OK).start()
+                            bcastElection(ID)
                         elif peerID == ID:
-                            threading.Thread(target=TCPServer_wait_OK).start()
+                            bcastElection(ID)
                     elif data[0] == 'O': #OK
                         print "NODE #", ID, "Gave up. (Receive OK from", peerID, ")"
                 else: 
@@ -87,32 +87,6 @@ def TCPServer():
 
     print threading.currentThread().getName(), 'TCP Server Exiting. I am NODE#', ID
     return
-
-def TCPServer_wait_OK():
-    ID = Configuration.getMyID()
-
-    bcastElection(ID)
-
-    MYIP = Configuration.getPublicIP()
-    TCP_PORT = Configuration.TCPPORT_OK 
-    BUFFER_SIZE = 1024
-    try:
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind(( socket.gethostname(), TCP_PORT))
-        print "waiting for OK.... at", socket.gethostname(), ":", TCP_PORT
-        server.listen(5) #At most 5 concurrent connection
-        timeout_in_seconds = 10
-        ready = select.select([server], [], [], timeout_in_seconds)
-        if ready[0]:
-            #data = server.recv(20)
-            print "RECEIVE OK"
-            return True
-        print "DID NOT RECEIVE OK"
-        return False
-    except:
-        print "Unexpected error:", sys.exc_info()[0]
-        print "still waiting for OK..."
-        return False
 
 def checkalive():
     time.sleep(10)
