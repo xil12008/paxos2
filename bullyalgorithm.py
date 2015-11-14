@@ -28,8 +28,7 @@ def TCPSend(dest, content):
         s.close()
         return 0 #exit successfully 
     except:
-        print "Unexpected error:", sys.exc_info()[0]
-        print "TCP Connection rejected"
+        printdata("Fail", ID, ID, Configuration.getID(TCP_IP), content)
         return 1
     
 def bcastCoordinator():
