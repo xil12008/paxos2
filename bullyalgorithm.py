@@ -8,6 +8,7 @@ import time
 from configuration import Configuration
 
 timervar = -99999999
+leader = -1 # unknown leader 
 
 #tag:print
 def printdata(head, node, source, end, data):
@@ -54,6 +55,8 @@ def TCPServer():
     print "TCP Server at", socket.gethostname(), ":", TCP_PORT
     server.listen(5) #At most 5 concurrent connection
     input = [server] 
+    global timervar
+    global leader
 
     while 1: 
         inputready,outputready,exceptready = select.select(input,[],[]) 
@@ -71,14 +74,18 @@ def TCPServer():
                     printdata("TCP Recv", ID, peerID, ID, data)
                     if data[0] == 'C': #Coordinate
                         print "NODE #", ID, "Leader is", peerID
+                        leader = peerID
                     elif data[0] == 'E': #Election
                         if peerID < ID:
                             TCPSend( peerID, "OK")
                             bcastElection(ID)
+                            timervar = 0
                         elif peerID == ID:
                             bcastElection(ID)
+                            timervar = 0
                     elif data[0] == 'O': #OK
                         print "NODE #", ID, "Gave up. (Receive OK from", peerID, ")"
+                        timervar = -99999
                 else: 
                     s.close() 
                     input.remove(s) 
@@ -87,11 +94,23 @@ def TCPServer():
     print threading.currentThread().getName(), 'TCP Server Exiting. I am NODE#', ID
     return
 
+def accumulate():
+    global timervar
+    while True:
+        time.sleep(1) 
+        if timervar >= 0:
+            timervar += 1 
+            print "wait OK for " , timervar, "/10 seconds..." 
+        if timervar == 10:
+            timervar = -9999999
+            bcastCoordinator()
+
 def checkalive():
     time.sleep(10)
     ID = Configuration.getMyID()
     #hold election by itself
     TCPSend(ID, "ELECTION")
+    global leader
     while True:
        try:
           print "Check leader alive? My leader is", leader 
@@ -103,11 +122,14 @@ def checkalive():
 
 #============================ main =========================#
 
-leader = -1 # unknown leader 
 
-t= threading.Thread(target=checkalive)
+t = threading.Thread(target=checkalive)
 t.daemon = True
 t.start()
+
+t2 = threading.Thread(target=accumulate)
+t2.daemon = True
+t2.start()
 
 TCPServer()
 
