@@ -28,6 +28,7 @@ def TCPSend(dest, content):
         s.close()
         return 0 #exit successfully 
     except:
+        print "Unexpected error:", sys.exc_info()[0]
         print "TCP Connection rejected"
         return 1
     
@@ -109,6 +110,7 @@ def TCPServer_wait_OK():
         print "DID NOT RECEIVE OK"
         return False
     except:
+        print "Unexpected error:", sys.exc_info()[0]
         print "still waiting for OK..."
         return False
 
