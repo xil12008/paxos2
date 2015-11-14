@@ -74,11 +74,9 @@ def TCPServer():
                     elif data[0] == 'E': #Election
                         if peerID < ID:
                             TCPSend( peerID, "OK")
-                            bcastElection(ID)
-                            TCPServer_wait_OK()
+                            threading.Thread(target=TCPServer_wait_OK).start()
                         elif peerID == ID:
-                            bcastElection(ID)
-                            TCPServer_wait_OK()
+                            threading.Thread(target=TCPServer_wait_OK).start()
                     elif data[0] == 'O': #OK
                         print "NODE #", ID, "Gave up. (Receive OK from", peerID, ")"
                 else: 
@@ -91,25 +89,28 @@ def TCPServer():
 
 def TCPServer_wait_OK():
     ID = Configuration.getMyID()
+
+    bcastElection(ID)
+
     MYIP = Configuration.getPublicIP()
     TCP_PORT = Configuration.TCPPORT_OK 
     BUFFER_SIZE = 1024
-    #try:
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(( socket.gethostname(), TCP_PORT))
-    print "waiting for OK.... at", socket.gethostname(), ":", TCP_PORT
-    server.listen(5) #At most 5 concurrent connection
-    timeout_in_seconds = 10
-    ready = select.select([server], [], [], timeout_in_seconds)
-    if ready[0]:
-        data = server.recv(20)
-        print "RECEIVE OK"
-        return True
-    print "DID NOT RECEIVE OK"
-    return False
-    #except:
-    #print "OK Server Conflict"
-    #return False
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(( socket.gethostname(), TCP_PORT))
+        print "waiting for OK.... at", socket.gethostname(), ":", TCP_PORT
+        server.listen(5) #At most 5 concurrent connection
+        timeout_in_seconds = 10
+        ready = select.select([server], [], [], timeout_in_seconds)
+        if ready[0]:
+            data = server.recv(20)
+            print "RECEIVE OK"
+            return True
+        print "DID NOT RECEIVE OK"
+        return False
+    except:
+        print "OK Server Conflict"
+        return False
 
 def checkalive():
     time.sleep(10)
@@ -120,9 +121,8 @@ def checkalive():
        try:
           print "Check leader alive? My leader is", leader 
           if leader != -1:
-              if TCPSend(leader, "hi") == "1" : #leader dead
-                  bcastElection(ID)
-                  TCPServer_wait_OK()
+              if TCPSend(leader, "hi") == 1 : #leader dead
+                  TCPSend(ID, "ELECTION")
        finally:
            time.sleep(5)
 
