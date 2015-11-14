@@ -10,7 +10,6 @@ class Configuration:
 
     UDPPORT = 5005 #UDP PORT
     TCPPORT = 12366 #TCP PORT
-    TCPPORT_OK = 12377 #TCP PORT
     PORTS = {"prepare":12345, "promise":12346, "accept":12345, "ack":12348, "commit":12345, "request":12345, "update":12347}
     
     ACCEPTOR_PORT = 12346
