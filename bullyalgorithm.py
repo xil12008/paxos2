@@ -109,7 +109,7 @@ def TCPServer_wait_OK():
         print "DID NOT RECEIVE OK"
         return False
     except:
-        print "OK Server Conflict"
+        print "still waiting for OK..."
         return False
 
 def checkalive():
